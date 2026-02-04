@@ -1,13 +1,13 @@
-from sqlalchemy import Column, Boolean, BigInteger, Text, Date, Enum as SQLEnum
+from sqlalchemy import Column, Boolean, BigInteger, Text, String, Date, TIMESTAMP, Enum as SQLEnum
 from db.base import Base
 from sqlalchemy.sql import func
 import enum
 
 # strategy state
 class StrategyState(str, enum.Enum):
-    BEFORE = "before"
-    ONGOING = "ongoing"
-    COMPLETED = "completed"
+    BEFORE = "BEFORE"
+    ONGOING = "ONGOING"
+    COMPLETED = "COMPLETED"
 
 class DangerMenuStrategy(Base):
     __tablename__ = "tb_danger_menu_strategy"
@@ -18,13 +18,14 @@ class DangerMenuStrategy(Base):
     guide = Column(Text, nullable=False)
     completion_phrase = Column(Text, nullable=False)
     menu_id = Column(BigInteger, nullable=False)
+    user_id = Column(BigInteger, nullable=False)
     strategy_date = Column(Date, nullable=False, server_default=func.current_date())
-    state = Column(
-    SQLEnum(StrategyState, name="strategy_state", create_type=False, values_callable=lambda x: [e.value for e in x]),
-        nullable=False,
-        default=StrategyState.BEFORE
-    )
+    start_date = Column(Date)
+    completion_date = Column(Date)
+    state = Column(String(50), nullable=False, default=StrategyState.BEFORE.value)
     is_saved = Column(Boolean, nullable=False, server_default="false")
+    created_at = Column(TIMESTAMP, nullable=False, server_default=func.current_timestamp())
+    updated_at = Column(TIMESTAMP, nullable=False, server_default=func.current_timestamp(), onupdate=func.current_timestamp())
 
 class CautionMenuStrategy(Base):
     __tablename__ = "tb_caution_menu_strategy"
@@ -36,12 +37,12 @@ class CautionMenuStrategy(Base):
     completion_phrase = Column(Text, nullable=False)
     user_id = Column(BigInteger, nullable=False)
     strategy_date = Column(Date, nullable=False, server_default=func.current_date())
-    state = Column(
-        SQLEnum(StrategyState, name="strategy_state", create_type=False, values_callable=lambda x: [e.value for e in x]),
-        nullable=False,
-        default=StrategyState.BEFORE
-    )
+    start_date = Column(Date)
+    completion_date = Column(Date)
+    state = Column(String(50), nullable=False, default=StrategyState.BEFORE.value)
     is_saved = Column(Boolean, nullable=False, server_default="false")
+    created_at = Column(TIMESTAMP, nullable=False, server_default=func.current_timestamp())
+    updated_at = Column(TIMESTAMP, nullable=False, server_default=func.current_timestamp(), onupdate=func.current_timestamp())
 
 
 class HighMarginMenuStrategy(Base):
@@ -54,9 +55,9 @@ class HighMarginMenuStrategy(Base):
     completion_phrase = Column(Text, nullable=False)
     user_id = Column(BigInteger, nullable=False)
     strategy_date = Column(Date, nullable=False, server_default=func.current_date())
-    state = Column(
-        SQLEnum(StrategyState, name="strategy_state", create_type=False, values_callable=lambda x: [e.value for e in x]),
-        nullable=False,
-        default=StrategyState.BEFORE
-    )
+    start_date = Column(Date)
+    completion_date = Column(Date)
+    state = Column(String(50), nullable=False, default=StrategyState.BEFORE.value)
     is_saved = Column(Boolean, nullable=False, server_default="false")
+    created_at = Column(TIMESTAMP, nullable=False, server_default=func.current_timestamp())
+    updated_at = Column(TIMESTAMP, nullable=False, server_default=func.current_timestamp(), onupdate=func.current_timestamp())

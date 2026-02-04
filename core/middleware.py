@@ -12,6 +12,9 @@ logger = logging.getLogger(__name__)
 class ResponseMiddleware(BaseHTTPMiddleware):
     """응답 통일"""
     async def dispatch(self, request, call_next):
+        if request.url.path in ["/openapi.json", "/docs", "/redoc"]:
+            return await call_next(request)
+        
         try:
             response = await call_next(request)
 

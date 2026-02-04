@@ -114,7 +114,7 @@ async def generate_danger_guides(catalog_db: Session, insight_db: Session, user:
 
             parsed = parse_guide(guide_content)
 
-            insight_crud.save_danger_menu_strategy(insight_db, parsed, menu.menu_id)
+            insight_crud.save_danger_menu_strategy(insight_db, parsed, menu.menu_id, user.user_id)
 
             logger.info(f"위험 메뉴 가이드 생성 성공 | user_id={user.user_id} | menu_id={menu.menu_id}")
             logger.info("---llm response--")
