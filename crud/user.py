@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import func
-from models.user_models import Users
+from models.user import Users
 from typing import List, Optional
 
 class UserCRUD:
