@@ -21,9 +21,7 @@ class StrategyService:
     """전략 생성 """
     async def create_strategy(self):
         users = user_crud.get_users(self.user_db)
-        logger.error(len(users))
         for user in users:
-            logger.error(user.user_id)
             try:
                 menus = menu_crud.get_menus(self.catalog_db, user.user_id)
                 
@@ -161,7 +159,6 @@ class StrategyService:
                     self.insight_db.commit()
 
                     logger.warning(f"전략 생성 성공 | user_id={user.user_id} | chains={list(chains_to_run.keys())}")
-                    logger.warning(result)
                 else:
                     logger.warning(f"전략 생성 스킵 | user_id={user.user_id} | 실행 가능한 메뉴 없음")
 
