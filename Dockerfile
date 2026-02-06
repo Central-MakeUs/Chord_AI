@@ -4,7 +4,7 @@ WORKDIR /app
 
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-COPY uv.lock* ./
+COPY pyproject.toml uv.lock* ./
 
 RUN uv sync --frozen --no-cache
 
