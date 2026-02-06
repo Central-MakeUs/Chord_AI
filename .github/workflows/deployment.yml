@@ -1,0 +1,42 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Login to Quay
+      run: echo "${{ secrets.QUAY_TOKEN }}" | docker login quay.io -u bread0930 --password-stdin
+    
+    - name: Build & Push Docker image
+      run: |
+        docker build -t quay.io/bread0930/chord-ai:latest
+        docker push quay.io/bread0930/chord-ai:latest
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Deploy to private EC2 - 1 (User-store, Auth)
+        uses: appleboy/ssh-action@v0.1.10
+        with:
+          host: ${{ secrets.PRIVATE_EC2_1_HOST }}
+          username: ubuntu
+          key: ${{ secrets.PRIVATE_EC2_1_SSH_KEY }}
+          proxy_host: ${{ secrets.PUBLIC_EC2_1_HOST }}
+          proxy_username: ubuntu
+          proxy_key: ${{ secrets.PUBLIC_EC2_1_SSH_KEY }}
+          script: |
+            docker-compose -f /home/ubuntu/docker-compose.yml pull
+            docker-compose -f /home/ubuntu/docker-compose.yml up -d
+            sleep 30
+            
