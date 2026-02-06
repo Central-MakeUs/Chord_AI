@@ -19,7 +19,7 @@ jobs:
     
     - name: Build & Push Docker image
       run: |
-        docker build -t quay.io/bread0930/chord-ai:latest
+        docker build -t quay.io/bread0930/chord-ai:latest .
         docker push quay.io/bread0930/chord-ai:latest
 
   deploy:
