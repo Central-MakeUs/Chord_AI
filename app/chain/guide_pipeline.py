@@ -6,10 +6,9 @@ from core.config import settings
 from crud.user import user_crud
 from crud.menu import menu_crud
 from crud.insight import insight_crud
-from models.catalog_models import Menu
-from models.user_models import Users
-from util.prompt_generator import PromptGenerator
-from schemas.guide import DangerMenu, CautionMenus, HighMarginMenus
+from models.catalog import Menu
+from models.user import Users
+from schemas.prompt_data import DangerMenu, CautionMenus, HighMarginMenus
 from util.parser import parse_guide
 from util.calculator import calculate_high_margin_contribution
 

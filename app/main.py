@@ -33,7 +33,7 @@ create_exception_handlers(app)
 @app.get("/root")
 async def read_root(catalog_db: Session = Depends(get_catalog_db), user_db: Session = Depends(get_user_db), insight_db: Session = Depends(get_insight_db)):
     service = StrategyService(catalog_db, user_db, insight_db)
-    await service.create_danger_strategy()  # 메서드 호출
+    await service.create_strategy()  
     return "hi"
 
 def main():

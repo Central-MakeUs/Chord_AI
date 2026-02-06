@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import func
-from models.catalog_models import Menu, Recipe
+from models.catalog import Menu, Recipe
 from typing import List, Optional
 
 class MenuCRUD:

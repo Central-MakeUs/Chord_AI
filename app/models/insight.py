@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Boolean, BigInteger, Text, String, Date, TIMESTAMP, Enum as SQLEnum
-from db.base import Base
+from db.session import Base
 from sqlalchemy.sql import func
 import enum
 

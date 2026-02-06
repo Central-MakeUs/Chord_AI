@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import func
-from models.insight_models import DangerMenuStrategy, CautionMenuStrategy, HighMarginMenuStrategy
+from models.insight import DangerMenuStrategy, CautionMenuStrategy, HighMarginMenuStrategy
 from typing import List, Optional
 from util.date_util import get_next_monday
 
