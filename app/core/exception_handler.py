@@ -2,7 +2,7 @@ from fastapi import Request, status
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError, HTTPException
 from starlette.exceptions import HTTPException as StarletteHTTPException
-from core.base_response import BusinessException, ErrorCode, ErrorResponse
+from app.core.base_response import BusinessException, ErrorCode, ErrorResponse
 
 def create_exception_handlers(app):
     """예외 핸들러"""

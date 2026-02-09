@@ -1,13 +1,13 @@
 from sqlalchemy.orm import Session
-from crud.menu import menu_crud
-from crud.user import user_crud
-from crud.insight import insight_crud
-from models.catalog  import Menu
+from app.crud.menu import menu_crud
+from app.crud.user import user_crud
+from app.crud.insight import insight_crud
+from app.models.catalog  import Menu
 import logging
-from schemas.prompt_data import DangerMenu, CautionMenus, HighMarginMenus
-from util.calculator import calculate_high_margin_contribution
+from app.schemas.prompt_data import DangerMenu, CautionMenus, HighMarginMenus
+from app.util.calculator import calculate_high_margin_contribution
 from langchain_core.runnables import RunnableParallel
-from chain.chains import danger_menu_chain, caution_menus_chain, high_margin_menus_chain
+from app.chain.chains import danger_menu_chain, caution_menus_chain, high_margin_menus_chain
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ class StrategyService:
                 menus = menu_crud.get_menus(self.catalog_db, user.user_id)
                 
                 """위험 메뉴"""
-                danger_menus = self.filter_danger_menus(menus)[:3]
+                danger_menus = self.filter_danger_menus(menus)[:5]
 
                 """주의 메뉴"""
                 caution_menus = self.filter_caution_menus(menus)
@@ -121,12 +121,14 @@ class StrategyService:
                                         'summary': strategy.summary,
                                         'analysis_detail': strategy.analysis_detail,
                                         'action_guide': strategy.action_guide,
-                                        'completion_phrase': strategy.completion_phrase
+                                        'expected_effect': "기대효과",
+                                        'completion_phrase':"완료 문구"
                                     },
                                     menu_id=danger_menus[i].menu_id,
                                     user_id=user.user_id
                                 )
                         logger.warning(f"위험 메뉴 전략 {len(danger_response.strategies)}개 저장 완료")
+                        # logger.warning(result)
 
                     if 'caution' in result and result['caution']:
                         caution_response = result['caution']  
@@ -136,11 +138,13 @@ class StrategyService:
                                 'summary': caution_response.summary,
                                 'analysis_detail': caution_response.analysis_detail,
                                 'action_guide': caution_response.action_guide,
-                                'completion_phrase': caution_response.completion_phrase
+                                'expected_effect': "기대효과",
+                                'completion_phrase':"완료 문구"
                             },
                             user_id=user.user_id
                         )
                         logger.warning(f"주의 메뉴 전략 저장 완료")
+                        logger.warning(result)
 
                     if 'high_margin' in result and result['high_margin']:
                         high_margin_response = result['high_margin']  
@@ -150,11 +154,13 @@ class StrategyService:
                                 'summary': high_margin_response.summary,
                                 'analysis_detail': high_margin_response.analysis_detail,
                                 'action_guide': high_margin_response.action_guide,
+                                'expected_effect': high_margin_response.expected_effect,
                                 'completion_phrase': high_margin_response.completion_phrase
                             },
                             user_id=user.user_id
                         )
                         logger.warning(f"고마진 메뉴 전략 저장 완료")
+                        # logger.warning(result)
 
                     self.insight_db.commit()
 
@@ -172,7 +178,7 @@ class StrategyService:
         for menu in menus:
             if menu.margin_grade_code == 'DANGER':
                 danger_menus.append(menu)
-        return danger_menus
+        return danger_menus[:5]
 
     def filter_caution_menus(self, menus: list[Menu]) -> list[Menu]:
         caution_menus = []

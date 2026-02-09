@@ -1,7 +1,7 @@
 from sqlalchemy import Column, BigInteger, DECIMAL, Boolean, String, Integer, TIMESTAMP, ForeignKey, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from db.session import Base
+from app.db.session import Base
 
 class Menu(Base):
     __tablename__ = "tb_menu"

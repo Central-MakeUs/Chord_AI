@@ -1,4 +1,4 @@
-from db.session import CatalogSessionLocal, UserSessionLocal, InsightSessionLocal
+from app.db.session import CatalogSessionLocal, UserSessionLocal, InsightSessionLocal
 from typing import Generator
 
 def get_catalog_db() -> Generator:

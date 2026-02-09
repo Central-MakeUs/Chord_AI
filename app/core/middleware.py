@@ -2,7 +2,7 @@ from fastapi import Request, status
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError, HTTPException
 from starlette.middleware.base import BaseHTTPMiddleware
-from core.base_response import ErrorResponse, ApiResponse, ErrorCode
+from app.core.base_response import ErrorResponse, ApiResponse, ErrorCode
 import traceback
 import logging
 import json

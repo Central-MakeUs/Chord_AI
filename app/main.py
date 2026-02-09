@@ -1,14 +1,14 @@
 from fastapi import FastAPI, Depends
 from typing import Union
 from fastapi.middleware.cors import CORSMiddleware
-from core.base_response import ApiResponse, BusinessException, ErrorCode
-from core.middleware import ResponseMiddleware
-from core.exception_handler import create_exception_handlers
+from app.core.base_response import ApiResponse, BusinessException, ErrorCode
+from app.core.middleware import ResponseMiddleware
+from app.core.exception_handler import create_exception_handlers
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
-from services.strategy_service import StrategyService
-from db.deps import get_catalog_db, get_user_db, get_insight_db
-from core.config import settings
+from app.services.strategy_service import StrategyService
+from app.db.deps import get_catalog_db, get_user_db, get_insight_db
+from app.core.config import settings
 app = FastAPI(
     title="Chord AI Insight API",
     description="Chord AI Insight 서비스 API 문서",

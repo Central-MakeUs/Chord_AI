@@ -1,5 +1,5 @@
 from sqlalchemy import Column, Boolean, BigInteger, Text, String, Date, TIMESTAMP, Enum as SQLEnum
-from db.session import Base
+from app.db.session import Base
 from sqlalchemy.sql import func
 import enum
 
@@ -16,6 +16,7 @@ class DangerMenuStrategy(Base):
     summary = Column(Text, nullable=False)
     detail = Column(Text, nullable=False)
     guide = Column(Text, nullable=False)
+    expected_effect = Column(Text, nullable=False)
     completion_phrase = Column(Text, nullable=False)
     menu_id = Column(BigInteger, nullable=False)
     user_id = Column(BigInteger, nullable=False)
@@ -34,6 +35,7 @@ class CautionMenuStrategy(Base):
     summary = Column(Text, nullable=False)
     detail = Column(Text, nullable=False)
     guide = Column(Text, nullable=False)
+    expected_effect = Column(Text, nullable=False)
     completion_phrase = Column(Text, nullable=False)
     user_id = Column(BigInteger, nullable=False)
     strategy_date = Column(Date, nullable=False, server_default=func.current_date())
@@ -52,6 +54,7 @@ class HighMarginMenuStrategy(Base):
     summary = Column(Text, nullable=False)
     detail = Column(Text, nullable=False)
     guide = Column(Text, nullable=False)
+    expected_effect = Column(Text, nullable=False)
     completion_phrase = Column(Text, nullable=False)
     user_id = Column(BigInteger, nullable=False)
     strategy_date = Column(Date, nullable=False, server_default=func.current_date())
