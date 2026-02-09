@@ -7,7 +7,9 @@ import logging
 from app.schemas.prompt_data import DangerMenu, CautionMenus, HighMarginMenus
 from app.util.calculator import calculate_high_margin_contribution
 from langchain_core.runnables import RunnableParallel
-from app.chain.chains import danger_menu_chain, caution_menus_chain, high_margin_menus_chain
+from app.chain.DangerMenuStrategy import danger_menu_chain
+from app.chain.CautionMenuStrategy import caution_menus_chain
+from app.chain.HighMarginMenuStrategy import high_margin_menus_chain
 
 logger = logging.getLogger(__name__)
 
