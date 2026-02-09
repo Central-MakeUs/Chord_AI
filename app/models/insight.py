@@ -46,7 +46,8 @@ class DangerMenuStrategy(Base):
     menu_id = Column(BigInteger, nullable=False)
     created_at = Column(TIMESTAMP, nullable=False, server_default=func.current_timestamp())
     updated_at = Column(TIMESTAMP, nullable=False, server_default=func.current_timestamp(), onupdate=func.current_timestamp())
-
+    guide_code = Column(String(10), nullable=False)
+    
     # Relationships
     baseline = relationship("StrategyBaseline", back_populates="danger_strategies")
 
@@ -68,6 +69,7 @@ class CautionMenuStrategy(Base):
     menu_id = Column(BigInteger, nullable=False)
     created_at = Column(TIMESTAMP, nullable=False, server_default=func.current_timestamp())
     updated_at = Column(TIMESTAMP, nullable=False, server_default=func.current_timestamp(), onupdate=func.current_timestamp())
+    guide_code = Column(String(10), nullable=False)
 
     # Relationships
     baseline = relationship("StrategyBaseline", back_populates="caution_strategy")

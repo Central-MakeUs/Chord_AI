@@ -17,24 +17,26 @@ class InsightCRUD:
         db.flush()  
         return baseline.baseline_id
 
-    def save_danger_menu_strategy(self, db: Session, baseline_id: int, insight: dict, menu_id: int):
+    def save_danger_menu_strategy(self, db: Session, baseline_id: int, insight: dict, menu_id: int, type: str):
         db.add(DangerMenuStrategy(
             baseline_id=baseline_id,
             summary=insight['summary'], 
             detail=insight['analysis_detail'], 
             guide=insight['action_guide'], 
             expected_effect=insight['expected_effect'],
-            menu_id=menu_id
+            menu_id=menu_id,
+            guide_code=type
             ))
 
-    def save_caution_menu_strategy(self, db: Session, baseline_id: int, insight: dict, menu_id: int):
+    def save_caution_menu_strategy(self, db: Session, baseline_id: int, insight: dict, menu_id: int, type: str):
         db.add(CautionMenuStrategy(
             baseline_id=baseline_id,
             summary=insight['summary'], 
             detail=insight['analysis_detail'], 
             guide=insight['action_guide'], 
             expected_effect=insight['expected_effect'],
-            menu_id=menu_id
+            menu_id=menu_id,
+            guide_code=type
             ))
 
     def save_high_margin_menu_strategy(self, db: Session, baseline_id: int, insight: dict):

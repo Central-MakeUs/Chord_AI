@@ -178,7 +178,8 @@ class StrategyService:
                                         'action_guide': strategy.action_guide,
                                         'expected_effect': expected_effect
                                     },
-                                    menu_id=danger_menus[i].menu_id
+                                    menu_id=danger_menus[i].menu_id,
+                                    type=type
                                 )
                         logger.warning(f"위험 메뉴 전략 {len(danger_response.strategies)}개 저장 완료")
                         # logger.warning(result)
@@ -219,7 +220,8 @@ class StrategyService:
                                 'action_guide': caution_response.action_guide,
                                 'expected_effect': expected_effect
                             },
-                            menu_id=caution_menus[0].menu_id
+                            menu_id=caution_menus[0].menu_id,
+                            type=type
                         )
                         logger.warning(f"주의 메뉴 전략 저장 완료")
                         logger.warning(result)
