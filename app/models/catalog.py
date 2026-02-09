@@ -42,8 +42,14 @@ class Ingredient(Base):
     created_at = Column(TIMESTAMP, nullable=False, server_default=func.current_timestamp())
     updated_at = Column(TIMESTAMP, nullable=False, server_default=func.current_timestamp(), onupdate=func.current_timestamp())
 
+    unit = relationship(
+        "Unit",
+        foreign_keys=[unit_code],
+        primaryjoin="Ingredient.unit_code == Unit.unit_code",
+        back_populates="ingredients"
+    )
     recipes = relationship("Recipe", back_populates="ingredient", cascade="all, delete-orphan")
-    unit = relationship("Unit", back_populates="ingredients")
+    
     __table_args__ = (
         UniqueConstraint('user_id', 'ingredient_name', name='uq_user_ingredient_name'),
     )
@@ -75,4 +81,9 @@ class Unit(Base):
     created_at = Column(TIMESTAMP, nullable=False, server_default=func.current_timestamp())
     updated_at = Column(TIMESTAMP, nullable=False, server_default=func.current_timestamp(), onupdate=func.current_timestamp())
 
-    ingredients = relationship("Ingredient", back_populates="unit")
+    ingredients = relationship(
+        "Ingredient",
+        foreign_keys="Ingredient.unit_code",
+        primaryjoin="Unit.unit_code == Ingredient.unit_code",
+        back_populates="unit"
+    )

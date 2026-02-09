@@ -30,11 +30,10 @@ app.add_middleware(
 app.add_middleware(ResponseMiddleware)
 create_exception_handlers(app)
 
-@app.get("/root")
+@app.post("/insights")
 async def read_root(catalog_db: Session = Depends(get_catalog_db), user_db: Session = Depends(get_user_db), insight_db: Session = Depends(get_insight_db)):
     service = StrategyService(catalog_db, user_db, insight_db)
     await service.create_strategy()  
-    return "hi"
 
 def main():
     print("Starting Chord AI Insight API...")

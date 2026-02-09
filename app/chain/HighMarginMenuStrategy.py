@@ -19,13 +19,6 @@ def get_system_prompt(context: str, parser: PydanticOutputParser) -> str:
     [작성 가이드]
     {context}
 
-    [길이 가이드]
-    summary: 15자 이내 1문장
-    analysis_detail: 100자 이내 1~2문장 
-    action_guide: 100자 이내 1~2문장
-    expected_effect: 50자 이내 1~2문장
-    completion_phrase: 50자 이내 1~2문장
-
     {format_instructions}
     """
 HIGH_MARGIN_MENUS_CONTEXT = "제공된 고마진 메뉴들의 데이터들을 기반으로 카페 수익성을 개선할 수 있는 종합 가이드를 작성해주세요. "

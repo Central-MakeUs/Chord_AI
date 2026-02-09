@@ -26,12 +26,10 @@ def get_system_prompt(context: str, parser: PydanticOutputParser) -> str:
 
 CAUTION_MENUS_CONTEXT = """
 제공된 마진 등급 주의 메뉴의 데이터를 기반으로 종합 개선 가이드를 작성해주세요.
-
 [전략 선택 기준]
-
 1. ADJUST_PRICE: 권장 가격 이상으로 가격을 조정해 안전 단계로 메뉴 이동
-   
 2. ADJUST_RECIPE: 레시피에서 체감 없는 재료 1가지를 조정해 안전 단계로 메뉴 이동 
+반드시 strategy_type 필드에 선택한 전략 코드를 반환해주세요.
 """
 
 class CautionMenusChain:
@@ -47,10 +45,9 @@ class CautionMenusChain:
         self.prompt = ChatPromptTemplate.from_messages([
             ("system", get_system_prompt(CAUTION_MENUS_CONTEXT, self.parser)),
             ("human", """
-            카페명:{cafe_name}
-            주의 메뉴 개수:{caution_menu_count}
-            주의 메뉴 목록(메뉴명/원가율/공헌이익):{caution_menu_details}
-            최저 공헌이익 메뉴:{lowest_contribution_menu_name} (공헌이익: {lowest_contribuition_menu_margin}%)
+            카페명: {cafe_name}
+            주의 메뉴 개수: {caution_menus_count}
+            최저 공헌이익 메뉴 상세: {lowest_caution_menu_details}
             """)
         ])
 

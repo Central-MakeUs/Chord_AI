@@ -5,14 +5,31 @@ from app.crud.insight import insight_crud
 from app.models.catalog  import Menu
 import logging
 from app.schemas.prompt_data import DangerMenu, CautionMenu, HighMarginMenus
-from app.chain.response_schema import DANGER_STRATEGY_TEMPLATES, CAUTION_STRATEGY_TEMPLATES
 from app.util.calculator import calculate_high_margin_contribution
 from langchain_core.runnables import RunnableParallel
 from app.chain.DangerMenuStrategy import danger_menu_chain
 from app.chain.CautionMenuStrategy import caution_menus_chain
 from app.chain.HighMarginMenuStrategy import high_margin_menus_chain
-
+from app.util.calculator import calculate_avg_margin_rate, calculate_avg_margin_rate_after_simulate, calculate_avg_cost_rate, calculate_avg_contribution_margin, calculate_avg_cost_rate_except_menu, calculate_contribution_margin, calculate_contribution_margin_after_selling_price_change
 logger = logging.getLogger(__name__)
+
+DANGER_STRATEGY_TEMPLATES = {
+    "REMOVE_MENU": {
+        "expected_effect": "해당 메뉴를 제외하면, 카페 전체 평균 원가율이 {cost_rate_improvement}%p 개선될 수 있어요. 위험 메뉴를 정리하면, 동일한 매출 수준에서도 전체 수익 구조가 더 안정적이게 변해요."
+    },
+    "ADJUST_PRICE": {
+        "expected_effect": "권장 가격인 {recommended_price}원으로 가격을 설정하면 이 메뉴 1잔당 남는 금액이 약 {contribution_improvement}원 증가해요."
+    }
+}
+
+CAUTION_STRATEGY_TEMPLATES = {
+    "ADJUST_PRICE": {
+        "expected_effect": "권장 가격인 {recommended_price}원으로 가격을 설정하면 이 메뉴 1잔당 남는 금액이 약 {contribution_improvement}원 증가해요."
+    },
+    "ADJUST_RECIPE": {
+        "expected_effect": "재료 조정으로 해당 메뉴가 안정 단계로 이동하면, 카페의 메뉴 구조 기준 평균 마진율이 약 {margin_rate_improvement}%p 개선돼요."
+    }
+}
 
 class StrategyService:
 
@@ -27,6 +44,18 @@ class StrategyService:
         for user in users:
             try:
                 menus = menu_crud.get_menus(self.catalog_db, user.user_id)
+
+                """baseline 저장"""
+                avg_margin_rate = calculate_avg_margin_rate(menus)
+                avg_cost_rate = calculate_avg_cost_rate(menus)
+                avg_contribution_margin = calculate_avg_contribution_margin(menus)
+                baseline_data = {
+                    'avg_margin_rate': avg_margin_rate,
+                    'avg_cost_rate': avg_cost_rate,
+                    'avg_contribution_margin': avg_contribution_margin
+                }
+                logger.warning(f"Baseline 데이터 계산 완료 | user_id={user.user_id} | data={baseline_data}")
+                baseline_id = insight_crud.save_strategy_baseline(self.insight_db, baseline_data, user.user_id)
                 
                 """위험 메뉴"""
                 danger_menus = self.filter_danger_menus(menus)[:5]
@@ -61,6 +90,7 @@ class StrategyService:
                         )
                         for menu in danger_menus
                     ]
+                    logger.warning(f"Danger Menu Parameter 준비 완료 | user_id={user.user_id} | menus={danger_menu_parameter}")
                     chains_to_run["danger"] = danger_menu_chain.chain
                     input_params.update({
                         "danger_menu_count": len(danger_menus),
@@ -85,7 +115,7 @@ class StrategyService:
                         caution_menus[0].contribution_margin,
                         caution_menus[0].recommended_price
                     )
-
+                    logger.warning(f"Caution Menu Parameter 준비 완료 | user_id={user.user_id} | menu={caution_menu_parameter}")
                     chains_to_run["caution"] = caution_menus_chain.chain
                     input_params.update({
                         "caution_menus_count": len(caution_menus),
@@ -105,6 +135,7 @@ class StrategyService:
                         ]],
                         calculate_high_margin_contribution(menus, high_margin_menus)
                     )
+                    logger.warning(f"High Margin Menu Parameter 준비 완료 | user_id={user.user_id} | menus={high_margin_menu_parameter}")
                     chains_to_run["high_margin"] = high_margin_menus_chain.chain
                     input_params.update({
                         "high_margin_menu_count": high_margin_menu_parameter.high_margin_menu_count,
@@ -122,34 +153,73 @@ class StrategyService:
                         for i, strategy in enumerate(danger_response.strategies):
                             if i < len(danger_menus): 
                                 type = strategy.strategy_type
-
+                                expected_effect = ""
+                                if(type == "REMOVE_MENU"):
+                                    expected_effect = DANGER_STRATEGY_TEMPLATES["REMOVE_MENU"]["expected_effect"].format(
+                                        cost_rate_improvement = f"{int(avg_cost_rate - calculate_avg_cost_rate_except_menu(menus, danger_menus[i].menu_id)):,}"
+                                    )
+                                elif (type == "ADJUST_PRICE"):
+                                    contribution_improvement = calculate_contribution_margin_after_selling_price_change(
+                                        user,
+                                        danger_menus[i],
+                                        new_selling_price=float(danger_menus[i].recommended_price)
+                                    ) - float(danger_menus[i].contribution_margin)
+                                    
+                                    expected_effect = DANGER_STRATEGY_TEMPLATES["ADJUST_PRICE"]["expected_effect"].format(
+                                        recommended_price=f"{int(danger_menus[i].recommended_price):,}",
+                                        contribution_improvement=f"{int(contribution_improvement):,}",
+                                    )
                                 insight_crud.save_danger_menu_strategy(
                                     db=self.insight_db,
+                                    baseline_id=baseline_id,
                                     insight={
                                         'summary': strategy.summary,
                                         'analysis_detail': strategy.analysis_detail,
                                         'action_guide': strategy.action_guide,
-                                        'expected_effect': "기대효과",
-                                        "completion_phrase":"완료 문구"
+                                        'expected_effect': expected_effect
                                     },
-                                    menu_id=danger_menus[i].menu_id,
-                                    user_id=user.user_id
+                                    menu_id=danger_menus[i].menu_id
                                 )
                         logger.warning(f"위험 메뉴 전략 {len(danger_response.strategies)}개 저장 완료")
                         # logger.warning(result)
 
                     if 'caution' in result and result['caution']:
                         caution_response = result['caution']  
+                        type = caution_response.strategy_type
+                        
+                        # 최저 공헌이익 메뉴
+                        lowest_menu = caution_menus[0]
+                        
+                        if type == "ADJUST_PRICE":
+                            price_gap = float(lowest_menu.recommended_price - lowest_menu.selling_price)
+                            
+                            expected_effect = CAUTION_STRATEGY_TEMPLATES["ADJUST_PRICE"]["expected_effect"].format(
+                                recommended_price=f"{int(lowest_menu.recommended_price):,}",
+                                contribution_improvement=f"{int(price_gap):,}"
+                            )
+                            
+                        elif type == "ADJUST_RECIPE":
+                            simulated_margin = calculate_avg_margin_rate_after_simulate(
+                                selling_price=lowest_menu.selling_price,
+                                current_cost_rate=lowest_menu.cost_rate,
+                                current_margin_rate=lowest_menu.margin_rate
+                            )
+                            margin_improvement = float(simulated_margin) - float(avg_margin_rate)
+                            
+                            expected_effect = CAUTION_STRATEGY_TEMPLATES["ADJUST_RECIPE"]["expected_effect"].format(
+                                margin_rate_improvement=f"{int(margin_improvement):,}"
+                            )
+                        
                         insight_crud.save_caution_menu_strategy(
                             db=self.insight_db,
+                            baseline_id=baseline_id,
                             insight={
                                 'summary': caution_response.summary,
                                 'analysis_detail': caution_response.analysis_detail,
                                 'action_guide': caution_response.action_guide,
-                                'expected_effect': "기대효과",
-                                'completion_phrase':"완료 문구"
+                                'expected_effect': expected_effect
                             },
-                            user_id=user.user_id
+                            menu_id=caution_menus[0].menu_id
                         )
                         logger.warning(f"주의 메뉴 전략 저장 완료")
                         logger.warning(result)
@@ -158,14 +228,14 @@ class StrategyService:
                         high_margin_response = result['high_margin']  
                         insight_crud.save_high_margin_menu_strategy(
                             db=self.insight_db,
+                            baseline_id=baseline_id,
                             insight={
                                 'summary': high_margin_response.summary,
                                 'analysis_detail': high_margin_response.analysis_detail,
                                 'action_guide': high_margin_response.action_guide,
                                 'expected_effect': high_margin_response.expected_effect,
                                 'completion_phrase': high_margin_response.completion_phrase
-                            },
-                            user_id=user.user_id
+                            }
                         )
                         logger.warning(f"고마진 메뉴 전략 저장 완료")
                         # logger.warning(result)

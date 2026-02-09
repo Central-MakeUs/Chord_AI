@@ -45,4 +45,3 @@ CAUTION_STRATEGY_TEMPLATES = {
         "expected_effect": "재료 조정으로 해당 메뉴가 안정 단계로 이동하면, 카페의 메뉴 구조 기준 평균 마진율이 약 {margin_rate_improvement}%p 개선돼요."
     }
 }
-
