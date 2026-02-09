@@ -4,7 +4,8 @@ from app.crud.user import user_crud
 from app.crud.insight import insight_crud
 from app.models.catalog  import Menu
 import logging
-from app.schemas.prompt_data import DangerMenu, CautionMenus, HighMarginMenus
+from app.schemas.prompt_data import DangerMenu, CautionMenu, HighMarginMenus
+from app.chain.response_schema import DANGER_STRATEGY_TEMPLATES, CAUTION_STRATEGY_TEMPLATES
 from app.util.calculator import calculate_high_margin_contribution
 from langchain_core.runnables import RunnableParallel
 from app.chain.DangerMenuStrategy import danger_menu_chain
@@ -67,25 +68,28 @@ class StrategyService:
                     })
 
                 if caution_menus:
-                    caution_menu_parameter = CautionMenus(
-                        len(caution_menus),
+                    caution_menu_parameter = CautionMenu(
+                        caution_menus[0].menu_name,
+                        caution_menus[0].selling_price,
                         [[
                             {
-                                "menu_name": menu.menu_name,
-                                "cost_rate": menu.cost_rate,
-                                "contribution_margin": menu.contribution_margin
+                                "ingredient_name": recipe.ingredient.ingredient_name,
+                                "unit": recipe.ingredient.unit_code,
+                                "unit_price": recipe.ingredient.current_unit_price,
+                                "base_quantity": recipe.ingredient.unit.base_quantity,
+                                "quantity": recipe.amount
                             }
-                            for menu in caution_menus
+                            for recipe in caution_menus[0].recipes
                         ]],
-                        min(caution_menus, key=lambda x: x.contribution_margin).menu_name,
-                        min(caution_menus, key=lambda x: x.contribution_margin).contribution_margin
+                        caution_menus[0].cost_rate,
+                        caution_menus[0].contribution_margin,
+                        caution_menus[0].recommended_price
                     )
+
                     chains_to_run["caution"] = caution_menus_chain.chain
                     input_params.update({
-                        "caution_menu_count": caution_menu_parameter.caution_menu_count,
-                        "caution_menu_details": str(caution_menu_parameter.caution_menu_list),
-                        "lowest_contribution_menu_name": caution_menu_parameter.lowest_contribution_menu_name,
-                        "lowest_contribuition_menu_margin": caution_menu_parameter.lowest_contribuition_menu_margin
+                        "caution_menus_count": len(caution_menus),
+                        "lowest_caution_menu_details": str(caution_menu_parameter)
                     })
 
                 if high_margin_menus:
@@ -117,6 +121,8 @@ class StrategyService:
                         danger_response = result['danger'] 
                         for i, strategy in enumerate(danger_response.strategies):
                             if i < len(danger_menus): 
+                                type = strategy.strategy_type
+
                                 insight_crud.save_danger_menu_strategy(
                                     db=self.insight_db,
                                     insight={
@@ -124,7 +130,7 @@ class StrategyService:
                                         'analysis_detail': strategy.analysis_detail,
                                         'action_guide': strategy.action_guide,
                                         'expected_effect': "기대효과",
-                                        'completion_phrase':"완료 문구"
+                                        "completion_phrase":"완료 문구"
                                     },
                                     menu_id=danger_menus[i].menu_id,
                                     user_id=user.user_id

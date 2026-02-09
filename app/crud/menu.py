@@ -12,6 +12,7 @@ class MenuCRUD:
                     .selectinload(Recipe.ingredient)
             )\
             .filter(Menu.user_id == user_id)\
+            .order_by(Menu.contribution_margin.desc())\
             .all()
 
 menu_crud = MenuCRUD()
