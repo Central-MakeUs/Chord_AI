@@ -6,9 +6,9 @@ import enum
 
 # Strategy State Enum
 class StrategyState(str, enum.Enum):
-    BEFORE = "before"
-    ONGOING = "ongoing"
-    COMPLETED = "completed"
+    BEFORE = "BEFORE"
+    ONGOING = "ONGOING"
+    COMPLETED = "COMPLETED"
 
 
 class StrategyBaseline(Base):
@@ -39,10 +39,10 @@ class DangerMenuStrategy(Base):
     detail = Column(Text, nullable=False)
     guide = Column(Text, nullable=False)
     expected_effect = Column(Text, nullable=False)
-    state = Column(String(10), nullable=False, server_default="before")
+    state = Column(String(10), nullable=False, server_default="BEFORE")
     is_saved = Column(Boolean, nullable=False, server_default="false")
-    start_date = Column(Date, nullable=True)
-    completion_date = Column(TIMESTAMP, nullable=True)  # DDL과 일치
+    start_date = Column(TIMESTAMP, nullable=True)
+    completion_date = Column(TIMESTAMP, nullable=True) 
     menu_id = Column(BigInteger, nullable=False)
     created_at = Column(TIMESTAMP, nullable=False, server_default=func.current_timestamp())
     updated_at = Column(TIMESTAMP, nullable=False, server_default=func.current_timestamp(), onupdate=func.current_timestamp())
@@ -61,10 +61,10 @@ class CautionMenuStrategy(Base):
     detail = Column(Text, nullable=False)
     guide = Column(Text, nullable=False)
     expected_effect = Column(Text, nullable=False)
-    state = Column(String(10), nullable=False, server_default="before")
+    state = Column(String(10), nullable=False, server_default="BEFORE")
     is_saved = Column(Boolean, nullable=False, server_default="false")
-    start_date = Column(Date, nullable=True)
-    completion_date = Column(Date, nullable=True)
+    start_date = Column(TIMESTAMP, nullable=True)
+    completion_date = Column(TIMESTAMP, nullable=True)
     menu_id = Column(BigInteger, nullable=False)
     created_at = Column(TIMESTAMP, nullable=False, server_default=func.current_timestamp())
     updated_at = Column(TIMESTAMP, nullable=False, server_default=func.current_timestamp(), onupdate=func.current_timestamp())
@@ -84,10 +84,10 @@ class HighMarginMenuStrategy(Base):
     guide = Column(Text, nullable=False)
     expected_effect = Column(Text, nullable=False)
     completion_phrase = Column(Text, nullable=False)
-    state = Column(String(10), nullable=False, server_default="before")
+    state = Column(String(10), nullable=False, server_default="BEFORE")
     is_saved = Column(Boolean, nullable=False, server_default="false")
-    start_date = Column(Date, nullable=True)
-    completion_date = Column(Date, nullable=True)
+    start_date = Column(TIMESTAMP, nullable=True)
+    completion_date = Column(TIMESTAMP, nullable=True)
     created_at = Column(TIMESTAMP, nullable=False, server_default=func.current_timestamp())
     updated_at = Column(TIMESTAMP, nullable=False, server_default=func.current_timestamp(), onupdate=func.current_timestamp())
 
