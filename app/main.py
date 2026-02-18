@@ -33,7 +33,7 @@ create_exception_handlers(app)
 @app.post("/insights")
 async def read_root(catalog_db: Session = Depends(get_catalog_db), user_db: Session = Depends(get_user_db), insight_db: Session = Depends(get_insight_db)):
     service = StrategyService(catalog_db, user_db, insight_db)
-    # await service.create_strategy()  
+    await service.create_strategy()  
     return "ok"
 
 def main():
