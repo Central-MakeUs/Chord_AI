@@ -21,7 +21,7 @@ class LocalSettings(BaseAppSettings):
 
 class ProdSettings(BaseAppSettings):
     class Config:
-        env_file = ".env.prod"
+        env_file = None
         env_file_encoding = "utf-8"
 
 @lru_cache()
