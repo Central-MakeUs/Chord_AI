@@ -43,7 +43,7 @@ class StrategyService:
         users = user_crud.get_users(self.user_db)
         for user in users:
             logger.warning(f"전략 생성 시작 | user_id={user.user_id} | store_name={user.store.name}")
-
+            continue
             try:
                 menus = menu_crud.get_menus(self.catalog_db, user.user_id)
 
