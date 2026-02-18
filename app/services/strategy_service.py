@@ -42,6 +42,9 @@ class StrategyService:
     async def create_strategy(self):
         users = user_crud.get_users(self.user_db)
         for user in users:
+            logger.warning(f"전략 생성 시작 | user_id={user.user_id} | store_name={user.store.name}")
+            continue
+        
             try:
                 menus = menu_crud.get_menus(self.catalog_db, user.user_id)
 
@@ -258,6 +261,7 @@ class StrategyService:
         for menu in menus:
             if menu.margin_grade_code == 'DANGER':
                 danger_menus.append(menu)
+        danger_menus.sort(key=lambda x: -float(x.contribution_margin))
         return danger_menus[:5]
 
     def filter_caution_menus(self, menus: list[Menu]) -> list[Menu]:
@@ -265,6 +269,7 @@ class StrategyService:
         for menu in menus:
             if menu.margin_grade_code == 'CAUTION':
                 caution_menus.append(menu)
+        caution_menus.sort(key=lambda x: -float(x.contribution_margin))
         return caution_menus
 
     def filter_high_margin_menus(self, menus: list[Menu]) -> list[Menu]:
