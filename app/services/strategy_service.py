@@ -259,7 +259,7 @@ class StrategyService:
         for menu in menus:
             if menu.margin_grade_code == 'DANGER':
                 danger_menus.append(menu)
-        danger_menus.sort(key=lambda x: -float(x.contribution_margin))
+        danger_menus.sort(key=lambda x: float(x.contribution_margin))
         return danger_menus[:5]
 
     def filter_caution_menus(self, menus: list[Menu]) -> list[Menu]:
@@ -267,7 +267,7 @@ class StrategyService:
         for menu in menus:
             if menu.margin_grade_code == 'CAUTION':
                 caution_menus.append(menu)
-        caution_menus.sort(key=lambda x: -float(x.contribution_margin))
+        caution_menus.sort(key=lambda x: float(x.contribution_margin))
         return caution_menus
 
     def filter_high_margin_menus(self, menus: list[Menu]) -> list[Menu]:
@@ -284,4 +284,4 @@ class StrategyService:
             if contrib >= margin_average and contrib >= margin_median
         ]
 
-        return sorted(high_margin_menus, key=lambda x: float(x.contribution_margin), reverse=True)[:5]
+        return sorted(high_margin_menus, key=lambda x: float(x.contribution_margin), reverse=False)[:5]
