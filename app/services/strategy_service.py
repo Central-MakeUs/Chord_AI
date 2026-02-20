@@ -46,7 +46,23 @@ class StrategyService:
             try:
                 menus = menu_crud.get_menus(self.catalog_db, user.user_id)
 
-                """baseline 저장"""
+
+                """위험 메뉴"""
+                danger_menus = self.filter_danger_menus(menus)
+
+                """주의 메뉴"""
+                caution_menus = self.filter_caution_menus(menus)
+
+                """고마진 메뉴"""
+                high_margin_menus = self.filter_high_margin_menus(menus)
+
+
+                """메뉴 리스트 (중복 제외)"""
+                unique_menus = self.merge_unique_menus(danger_menus, caution_menus, high_margin_menus)
+                if not unique_menus:
+                    continue
+
+                """baseline 저장(존재 시)"""
                 avg_margin_rate = calculate_avg_margin_rate(menus)
                 avg_cost_rate = calculate_avg_cost_rate(menus)
                 avg_contribution_margin = calculate_avg_contribution_margin(menus)
@@ -55,17 +71,19 @@ class StrategyService:
                     'avg_cost_rate': avg_cost_rate,
                     'avg_contribution_margin': avg_contribution_margin
                 }
+            
                 logger.warning(f"Baseline 데이터 계산 완료 | user_id={user.user_id} | data={baseline_data}")
                 baseline_id = insight_crud.save_strategy_baseline(self.insight_db, baseline_data, user.user_id)
                 
-                """위험 메뉴"""
-                danger_menus = self.filter_danger_menus(menus)[:5]
+                """ 스냅샷 저장(존재 시)"""
+                menu_snapshot_map = {}
 
-                """주의 메뉴"""
-                caution_menus = self.filter_caution_menus(menus)
+                for unique_menu in unique_menus:
+                    snapshot_id = insight_crud.save_menu_snapshots(self.insight_db, baseline_id, unique_menu)
+                    menu_snapshot_map[unique_menu.menu_id] = snapshot_id
 
-                """고마진 메뉴"""
-                high_margin_menus = self.filter_high_margin_menus(menus)
+                    for recipe in unique_menu.recipes:
+                        insight_crud.save_recipe_snapshots(self.insight_db, snapshot_id, recipe)
 
                 chains_to_run = {}
                 input_params = {"cafe_name": user.store.name}
@@ -180,7 +198,8 @@ class StrategyService:
                                         'expected_effect': expected_effect
                                     },
                                     menu_id=danger_menus[i].menu_id,
-                                    type=type
+                                    type=type, 
+                                    snapshot_id=menu_snapshot_map[danger_menus[i].menu_id]
                                 )
                         logger.warning(f"위험 메뉴 전략 {len(danger_response.strategies)}개 저장 완료")
                         # logger.warning(result)
@@ -222,14 +241,15 @@ class StrategyService:
                                 'expected_effect': expected_effect
                             },
                             menu_id=caution_menus[0].menu_id,
-                            type=type
+                            type=type,
+                            snapshot_id=menu_snapshot_map[caution_menus[0].menu_id]
                         )
                         logger.warning(f"주의 메뉴 전략 저장 완료")
                         logger.warning(result)
 
                     if 'high_margin' in result and result['high_margin']:
                         high_margin_response = result['high_margin']  
-                        insight_crud.save_high_margin_menu_strategy(
+                        strategy_id = insight_crud.save_high_margin_menu_strategy(
                             db=self.insight_db,
                             baseline_id=baseline_id,
                             insight={
@@ -240,6 +260,15 @@ class StrategyService:
                                 'completion_phrase': high_margin_response.completion_phrase
                             }
                         )
+                        targets = []
+                        for high_margin_menu in high_margin_menus:
+                            targets.append({
+                                'strategy_id': strategy_id,
+                                'menu_id': high_margin_menu.menu_id,
+                                'snapshot_id': menu_snapshot_map[high_margin_menu.menu_id]
+                            })
+                        insight_crud.save_high_margin_menu_lists(self.insight_db, targets)
+
                         logger.warning(f"고마진 메뉴 전략 저장 완료")
                         # logger.warning(result)
 
@@ -268,7 +297,7 @@ class StrategyService:
             if menu.margin_grade_code == 'CAUTION':
                 caution_menus.append(menu)
         caution_menus.sort(key=lambda x: float(x.contribution_margin))
-        return caution_menus
+        return caution_menus[:1]
 
     def filter_high_margin_menus(self, menus: list[Menu]) -> list[Menu]:
         if not menus:
@@ -285,3 +314,9 @@ class StrategyService:
         ]
 
         return sorted(high_margin_menus, key=lambda x: float(x.contribution_margin), reverse=False)[:5]
+    def merge_unique_menus(self, *menu_lists):
+        unique = {}
+        for menus in menu_lists:
+            for menu in menus:
+                unique[menu.menu_id] = menu
+        return list(unique.values())
