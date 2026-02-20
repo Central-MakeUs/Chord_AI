@@ -282,7 +282,119 @@ class StrategyService:
                 self.insight_db.rollback()
                 logger.error(f"전략 생성 파이프라인 실패 | user_id={user.user_id} | error={str(e)}")
                 continue
-    
+    async def created_danger_strategy(self, user_id: int, menu_id: int):
+        user = user_crud.get_user(self.user_db, user_id)
+        
+        if user is None:
+            logger.error(f"사용자 정보 조회 실패 | user_id={user_id}")
+            return
+        
+        logger.warning(f"위험 전략 생성 시작 | user_id={user.user_id} | store_name={user.store.name}")
+        try:
+            menu = menu_crud.get_menu(self.catalog_db, user_id, menu_id)
+            
+            if menu is None:
+                logger.error(f"메뉴 정보 조회 실패 | user_id={user_id} | menu_id={menu_id}")
+                return
+            
+            menus = menu_crud.get_menus(self.catalog_db, user_id)
+            danger_menus = self.filter_danger_menus(menus)
+
+
+
+
+            """baseline 저장(존재 시)"""
+            avg_margin_rate = calculate_avg_margin_rate(menus)
+            avg_cost_rate = calculate_avg_cost_rate(menus)
+            avg_contribution_margin = calculate_avg_contribution_margin(menus)
+            baseline_data = {
+                'avg_margin_rate': avg_margin_rate,
+                'avg_cost_rate': avg_cost_rate,
+                'avg_contribution_margin': avg_contribution_margin
+            }
+        
+            logger.warning(f"Baseline 데이터 계산 완료 | user_id={user.user_id} | data={baseline_data}")
+            baseline_id = insight_crud.save_strategy_baseline(self.insight_db, baseline_data, user.user_id)
+            
+            """ 스냅샷 저장(존재 시)"""
+            snapshot_id = insight_crud.save_menu_snapshots(self.insight_db, baseline_id, menu)
+
+            for recipe in menu.recipes:
+                insight_crud.save_recipe_snapshots(self.insight_db, snapshot_id, recipe)
+
+            input_params = {"cafe_name": user.store.name}
+
+            danger_menu_parameter = [
+                DangerMenu(
+                    menu.menu_name,
+                    menu.selling_price,
+                    [
+                        {
+                            "ingredient_name": recipe.ingredient.ingredient_name,
+                            "unit": recipe.ingredient.unit_code,
+                            "unit_price": recipe.ingredient.current_unit_price,
+                            "base_quantity": recipe.ingredient.unit.base_quantity,
+                            "quantity": recipe.amount
+                        }
+                        for recipe in menu.recipes
+                    ],
+                    menu.cost_rate,
+                    menu.contribution_margin,
+                    menu.recommended_price
+                )
+            ]
+            logger.warning(f"Danger Menu Parameter 준비 완료 | user_id={user.user_id} | menus={danger_menu_parameter}")
+
+            input_params.update({
+                "danger_menu_count": len(danger_menus),
+                "menu_details": str(danger_menu_parameter)
+            })
+
+            result = danger_menu_chain.chain.invoke(input_params)
+
+            if result and result.strategies:
+                strategy = result.strategies[0] 
+                strategy_type = strategy.strategy_type  
+                expected_effect = ""
+                
+                if strategy_type == "REMOVE_MENU":
+                    expected_effect = DANGER_STRATEGY_TEMPLATES["REMOVE_MENU"]["expected_effect"].format(
+                        cost_rate_improvement=f"{int(avg_cost_rate - calculate_avg_cost_rate_except_menu(menus, menu.menu_id)):,}"
+                    )
+                elif strategy_type == "ADJUST_PRICE":
+                    contribution_improvement = calculate_contribution_margin_after_selling_price_change(
+                        user,
+                        menu,
+                        new_selling_price=float(menu.recommended_price)
+                    ) - float(menu.contribution_margin)
+                    
+                    expected_effect = DANGER_STRATEGY_TEMPLATES["ADJUST_PRICE"]["expected_effect"].format(
+                        recommended_price=f"{int(menu.recommended_price):,}",
+                        contribution_improvement=f"{int(contribution_improvement):,}",
+                    )
+                
+                insight_crud.save_danger_menu_strategy(
+                    db=self.insight_db,
+                    baseline_id=baseline_id,
+                    insight={
+                        'summary': strategy.summary,
+                        'analysis_detail': strategy.analysis_detail,
+                        'action_guide': strategy.action_guide,
+                        'expected_effect': expected_effect
+                    },
+                    menu_id=menu.menu_id,
+                    type=strategy_type,
+                    snapshot_id=snapshot_id
+                )
+                logger.warning(f"위험 메뉴 전략 저장 완료")
+
+            self.insight_db.commit()
+
+            logger.warning(f"전략 생성 성공 | user_id={user.user_id}")
+        except Exception as e:
+            self.insight_db.rollback()
+            logger.error(f"전략 생성 파이프라인 실패 | user_id={user.user_id} | error={str(e)}")
+
     def filter_danger_menus(self, menus: list[Menu]) -> list[Menu]:
         danger_menus = []
         for menu in menus:

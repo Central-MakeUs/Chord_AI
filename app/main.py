@@ -31,9 +31,21 @@ app.add_middleware(ResponseMiddleware)
 create_exception_handlers(app)
 
 @app.post("/insights")
-async def read_root(catalog_db: Session = Depends(get_catalog_db), user_db: Session = Depends(get_user_db), insight_db: Session = Depends(get_insight_db)):
+async def create_insights(catalog_db: Session = Depends(get_catalog_db), user_db: Session = Depends(get_user_db), insight_db: Session = Depends(get_insight_db)):
     service = StrategyService(catalog_db, user_db, insight_db)
     await service.create_strategy()  
+    return "ok"
+
+@app.post("/insight/danger")
+async def create_danger_insight(
+    user_id: int,
+    menu_id: int,
+    catalog_db: Session = Depends(get_catalog_db),
+    user_db: Session = Depends(get_user_db),
+    insight_db: Session = Depends(get_insight_db)
+):
+    service = StrategyService(catalog_db, user_db, insight_db)
+    await service.created_danger_strategy(user_id, menu_id)
     return "ok"
 
 def main():
