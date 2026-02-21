@@ -1,5 +1,6 @@
 from sqlalchemy.orm import Session, joinedload, selectinload
 from sqlalchemy import func
+from datetime import datetime
 from app.models.catalog import Menu, Ingredient, Recipe
 from app.models.insight import DangerMenuStrategy, CautionMenuStrategy, HighMarginMenuStrategy, StrategyBaseline, MenuSnapshot, RecipeSnapshot, HighMarginMenuList
 from typing import List, Optional
@@ -51,7 +52,18 @@ class InsightCRUD:
         db.add(baseline)
         db.flush()  
         return baseline.baseline_id
-
+    def save_strategy_baselilne_now(self, db: Session, baseline_data: dict, user_id: int):
+        baseline = StrategyBaseline(
+            user_id=user_id,
+            avg_margin_rate=baseline_data['avg_margin_rate'],
+            avg_cost_rate=baseline_data['avg_cost_rate'],
+            avg_contribution_margin=baseline_data['avg_contribution_margin'],
+            strategy_date=datetime.now().date()
+        )
+        db.add(baseline)
+        db.flush()  
+        return baseline.baseline_id
+    
     def save_danger_menu_strategy(self, db: Session, baseline_id: int, insight: dict, menu_id: int, type: str, snapshot_id: int):
         db.add(DangerMenuStrategy(
             baseline_id=baseline_id,

@@ -314,7 +314,7 @@ class StrategyService:
             }
         
             logger.warning(f"Baseline 데이터 계산 완료 | user_id={user.user_id} | data={baseline_data}")
-            baseline_id = insight_crud.save_strategy_baseline(self.insight_db, baseline_data, user.user_id)
+            baseline_id = insight_crud.save_strategy_baselilne_now(self.insight_db, baseline_data, user.user_id)
             
             """ 스냅샷 저장(존재 시)"""
             snapshot_id = insight_crud.save_menu_snapshots(self.insight_db, baseline_id, menu)
