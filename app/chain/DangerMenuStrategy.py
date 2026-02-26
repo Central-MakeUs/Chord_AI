@@ -1,4 +1,4 @@
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 from app.core.config import settings
 from app.chain.response_schema import DangerStrategyResponse
 from langchain_core.output_parsers import PydanticOutputParser
@@ -15,13 +15,11 @@ def get_system_prompt(context: str, parser: PydanticOutputParser) -> str:
     1. JSON schema로 답하되 작성 포맷을 따라주세요
     2. 모든 답변은 '~해요', '~이에요/예요'와 같은 해요체(말 끝에 '요'를 붙이는 문체)를 사용해 주세요. 격식 있는 '하십시오체'나 딱딱한 말투는 피해 주세요. 특수기호는 사용하지 마세요
     3. 수치는 반드시 제공된 데이터 기준으로만 사용하되, 숫자는 모두 정수 형태(반올림)로 나타내주세요
-    4. 추상적이지 않고 구체적인 행동 가이드를 작성해주세요
+    4. 아래 전략 유형 중 하나를 선택해서 작성해주세요. 
 
     [작성 가이드 - 메뉴별 차별화 필수]
-    - summary: 해당 메뉴의 핵심 문제를 메뉴명을 포함하여 구체적으로 작성
-    - analysis_detail: 원가율, 공헌이익, 권장가격 중 가장 두드러진 문제점 1-2가지만 집중 분석
-    - action_guide: 선택한 전략에 따라 구체적인 액션 제시
-    
+    summary, analysis_detail, action_guide는 무조건 선택한 전략 유형과 동일하게 작성해주세요.
+
     {context}
 
     {format_instructions}
@@ -40,11 +38,11 @@ DANGER_MENU_CONTEXT = """
 class DangerMenuChain:
     
     def __init__(self):
-        self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash",
+        self.llm = ChatOpenAI(
+            model="gpt-4o-mini",
             temperature=1.0,
-            max_output_tokens=6000,
-            google_api_key=settings.GOOGLE_API_KEY 
+            max_tokens=8000,
+            api_key=settings.OPENAI_API_KEY
         )
         self.parser = PydanticOutputParser(pydantic_object=DangerStrategyResponse)
         self.prompt = ChatPromptTemplate.from_messages([

@@ -1,4 +1,4 @@
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_openai import ChatOpenAI
 from app.core.config import settings
 from app.chain.response_schema import HighMarginStrategyResponse
 from langchain_core.output_parsers import PydanticOutputParser
@@ -26,11 +26,11 @@ HIGH_MARGIN_MENUS_CONTEXT = "제공된 고마진 메뉴들의 데이터들을 �
 class HighMarginMenusChain:
 
     def __init__(self):
-        self.llm = ChatGoogleGenerativeAI(
-            model="gemini-2.0-flash",
+        self.llm = ChatOpenAI(
+            model="gpt-4o-mini",
             temperature=1.0,
-            max_output_tokens=2000,
-            google_api_key=settings.GOOGLE_API_KEY 
+            max_tokens=2000,
+            api_key=settings.OPENAI_API_KEY
         )        
         self.parser = PydanticOutputParser(pydantic_object=HighMarginStrategyResponse)
         self.prompt = ChatPromptTemplate.from_messages([

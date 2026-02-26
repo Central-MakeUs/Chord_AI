@@ -11,6 +11,9 @@ from app.chain.DangerMenuStrategy import danger_menu_chain
 from app.chain.CautionMenuStrategy import caution_menus_chain
 from app.chain.HighMarginMenuStrategy import high_margin_menus_chain
 from app.util.calculator import calculate_avg_margin_rate, calculate_avg_margin_rate_after_simulate, calculate_avg_cost_rate, calculate_avg_contribution_margin, calculate_avg_cost_rate_except_menu, calculate_contribution_margin, calculate_contribution_margin_after_selling_price_change
+from langchain_core.exceptions import OutputParserException
+
+
 logger = logging.getLogger(__name__)
 
 DANGER_STRATEGY_TEMPLATES = {
@@ -92,20 +95,20 @@ class StrategyService:
                     danger_menu_parameter = [
                         DangerMenu(
                             menu.menu_name,
-                            menu.selling_price,
-                            [[
+                            float(menu.selling_price),
+                            [
                                 {
                                     "ingredient_name": recipe.ingredient.ingredient_name,
                                     "unit": recipe.ingredient.unit_code,
-                                    "unit_price": recipe.ingredient.current_unit_price,
+                                    "unit_price": float(recipe.ingredient.current_unit_price),
                                     "base_quantity": recipe.ingredient.unit.base_quantity,
-                                    "quantity": recipe.amount
+                                    "quantity": float(recipe.amount)
                                 }
                                 for recipe in menu.recipes
-                            ]],
-                            menu.cost_rate,
-                            menu.contribution_margin,
-                            menu.recommended_price
+                            ],
+                            float(menu.cost_rate),
+                            float(menu.contribution_margin),
+                            float(menu.recommended_price)
                         )
                         for menu in danger_menus
                     ]
@@ -119,7 +122,7 @@ class StrategyService:
                 if caution_menus:
                     caution_menu_parameter = CautionMenu(
                         caution_menus[0].menu_name,
-                        caution_menus[0].selling_price,
+                        float(caution_menus[0].selling_price),
                         [[
                             {
                                 "ingredient_name": recipe.ingredient.ingredient_name,
@@ -130,9 +133,9 @@ class StrategyService:
                             }
                             for recipe in caution_menus[0].recipes
                         ]],
-                        caution_menus[0].cost_rate,
-                        caution_menus[0].contribution_margin,
-                        caution_menus[0].recommended_price
+                        float(caution_menus[0].cost_rate),
+                        float(caution_menus[0].contribution_margin),
+                        float(caution_menus[0].recommended_price)
                     )
                     logger.warning(f"Caution Menu Parameter 준비 완료 | user_id={user.user_id} | menu={caution_menu_parameter}")
                     chains_to_run["caution"] = caution_menus_chain.chain
@@ -147,12 +150,12 @@ class StrategyService:
                         [[
                             {
                                 "menu_name": menu.menu_name,
-                                "margin_rate": menu.margin_rate,
-                                "contribution_margin": menu.contribution_margin
+                                "margin_rate": float(menu.margin_rate),
+                                "contribution_margin": float(menu.contribution_margin)
                             }
                             for menu in high_margin_menus
                         ]],
-                        calculate_high_margin_contribution(menus, high_margin_menus)
+                        float(calculate_high_margin_contribution(menus, high_margin_menus))
                     )
                     logger.warning(f"High Margin Menu Parameter 준비 완료 | user_id={user.user_id} | menus={high_margin_menu_parameter}")
                     chains_to_run["high_margin"] = high_margin_menus_chain.chain
@@ -165,6 +168,8 @@ class StrategyService:
                 if chains_to_run:
                     parallel_chain = RunnableParallel(**chains_to_run)
                     result = parallel_chain.invoke(input_params)
+
+                    logger.warning(f"전략 생성 결과 | user_id={user.user_id} | result={result}")
 
                     # db 저장
                     if 'danger' in result and result['danger']:
@@ -277,7 +282,8 @@ class StrategyService:
                     logger.warning(f"전략 생성 성공 | user_id={user.user_id} | chains={list(chains_to_run.keys())}")
                 else:
                     logger.warning(f"전략 생성 스킵 | user_id={user.user_id} | 실행 가능한 메뉴 없음")
-
+            except OutputParserException as e:
+                logger.error(f"LLM 출력 파싱 실패 | raw_output={e}")
             except Exception as e:
                 self.insight_db.rollback()
                 logger.error(f"전략 생성 파이프라인 실패 | user_id={user.user_id} | error={str(e)}")
@@ -327,20 +333,20 @@ class StrategyService:
             danger_menu_parameter = [
                 DangerMenu(
                     menu.menu_name,
-                    menu.selling_price,
+                    float(menu.selling_price),
                     [
                         {
                             "ingredient_name": recipe.ingredient.ingredient_name,
                             "unit": recipe.ingredient.unit_code,
-                            "unit_price": recipe.ingredient.current_unit_price,
+                            "unit_price": float(recipe.ingredient.current_unit_price),
                             "base_quantity": recipe.ingredient.unit.base_quantity,
-                            "quantity": recipe.amount
+                            "quantity": float(recipe.amount)
                         }
                         for recipe in menu.recipes
                     ],
-                    menu.cost_rate,
-                    menu.contribution_margin,
-                    menu.recommended_price
+                    float(menu.cost_rate),
+                    float(menu.contribution_margin),
+                    float(menu.recommended_price)
                 )
             ]
             logger.warning(f"Danger Menu Parameter 준비 완료 | user_id={user.user_id} | menus={danger_menu_parameter}")

@@ -13,6 +13,7 @@ class BaseAppSettings(BaseSettings):
     INSIGHT_DB_NAME: str = "insight"
 
     GOOGLE_API_KEY: str
+    OPENAI_API_KEY: str
 
 class LocalSettings(BaseAppSettings):
     class Config:
