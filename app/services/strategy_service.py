@@ -404,7 +404,7 @@ class StrategyService:
     def filter_danger_menus(self, menus: list[Menu]) -> list[Menu]:
         danger_menus = []
         for menu in menus:
-            if menu.margin_grade_code == 'DANGER':
+            if menu.margin_grade_code == 'DANGER' and menu.cost_rate > 50:
                 danger_menus.append(menu)
         danger_menus.sort(key=lambda x: float(x.contribution_margin))
         return danger_menus[:5]
